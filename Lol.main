@@ -1,0 +1,110 @@
+-- Delta Executor - Timebomb Duels Pro UI & Stable Script
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+
+local LocalPlayer = Players.LocalPlayer
+local active = false
+
+-- فحص وجود القنبلة بيدك أو بالحقيبة
+local function checkBomb()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChildOfClass("Tool") then return true end
+    local bp = LocalPlayer:FindFirstChild("Backpack")
+    if bp and bp:FindFirstChildOfClass("Tool") then return true end
+    return false
+end
+
+-- البحث عن أقرب لاعب خصم
+local function getTarget()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+    
+    local myPos = char.HumanoidRootPart.Position
+    local target, minDist = nil, math.huge
+    
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local hum = p.Character:FindFirstChild("Humanoid")
+            if hum and hum.Health > 0 then
+                local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
+                if dist < minDist then
+                    minDist = dist
+                    target = p.Character.HumanoidRootPart
+                end
+            end
+        end
+    end
+    return target
+end
+
+-- حلقة الحركة بثقل متوازن وسلاسة (تحديث كل 0.10 ثانية)
+task.spawn(function()
+    while true do
+        task.wait(0.10)
+        if active and checkBomb() then
+            local targetPart = getTarget()
+            local char = LocalPlayer.Character
+            if targetPart and char then
+                local hum = char:FindFirstChild("Humanoid")
+                if hum then
+                    hum:MoveTo(targetPart.Position)
+                end
+            end
+        end
+    end
+end)
+
+-- تصميم الواجهة المعتدلة والمطورة (Modern Glass UI)
+local gui = Instance.new("ScreenGui", CoreGui)
+gui.Name = "ProBombGui"
+
+local mainFrame = Instance.new("Frame", gui)
+mainFrame.Size = UDim2.new(0, 185, 0, 70)
+mainFrame.Position = UDim2.new(0.05, 0, 0.35, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 17, 23)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+local mainCorner = Instance.new("UICorner", mainFrame)
+mainCorner.CornerRadius = UDim.new(0, 14)
+
+local stroke = Instance.new("UIStroke", mainFrame)
+stroke.Color = Color3.fromRGB(80, 90, 120)
+stroke.Thickness = 1.8
+
+local title = Instance.new("TextLabel", mainFrame)
+title.Size = UDim2.new(1, 0, 0, 22)
+title.Position = UDim2.new(0, 0, 0, 5)
+title.BackgroundTransparency = 1
+title.Text = "AUTO-TRACK V2 (0.10s)"
+title.TextColor3 = Color3.fromRGB(140, 150, 180)
+title.TextSize = 10
+title.Font = Enum.Font.GothamBold
+
+local btn = Instance.new("TextButton", mainFrame)
+btn.Size = UDim2.new(1, -16, 0, 36)
+btn.Position = UDim2.new(0, 8, 0, 26)
+btn.BackgroundColor3 = Color3.fromRGB(28, 32, 42)
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+btn.Text = "التتبع: معطل 🔴"
+btn.TextSize = 13
+btn.Font = Enum.Font.GothamBold
+btn.BorderSizePixel = 0
+
+local btnCorner = Instance.new("UICorner", btn)
+btnCorner.CornerRadius = UDim.new(0, 9)
+
+btn.MouseButton1Click:Connect(function()
+    active = not active
+    if active then
+        btn.Text = "التتبع: مفعل 🟢"
+        btn.BackgroundColor3 = Color3.fromRGB(16, 150, 84)
+        stroke.Color = Color3.fromRGB(46, 204, 113)
+    else
+        btn.Text = "التتبع: معطل 🔴"
+        btn.BackgroundColor3 = Color3.fromRGB(28, 32, 42)
+        stroke.Color = Color3.fromRGB(80, 90, 120)
+    end
+end)
